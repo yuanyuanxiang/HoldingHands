@@ -6,8 +6,7 @@
 CCmdEdit::CCmdEdit(CCmdSrv*	&pHandler) :
 	m_pHandler(pHandler),
 	m_ReadOnlyLength(0),
-	m_LastCommand(NULL),
-	m_LastLineTextLength(0)
+	m_LastCommand(NULL)
 {
 }
 
@@ -21,14 +20,14 @@ CCmdEdit::~CCmdEdit()
 BOOL CCmdEdit::PreTranslateMessage(MSG* pMsg)
 {
 	int start, end, left;
-	// TODO:  ÔÚ´ËÌí¼Ó×¨ÓÃ´úÂëºÍ/»òµ÷ÓÃ»ùÀà
+	// TODO:  åœ¨æ­¤æ·»åŠ ä¸“ç”¨ä»£ç å’Œ/æˆ–è°ƒç”¨åŸºç±»
 	if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_BACK){
 		GetSel(start, end);
 		left = min(start, end);
 
-		//µÈÓÚµÄ»°´ú±íÆğÊ¼¹â±êÔÚRecvSting µÄ×îºóÒ»¸öÎ»ÖÃ
+		//ç­‰äºçš„è¯ä»£è¡¨èµ·å§‹å…‰æ ‡åœ¨RecvSting çš„æœ€åä¸€ä¸ªä½ç½®
 		if (left <= m_ReadOnlyLength){
-			return TRUE;				//ºöÂÔ
+			return TRUE;				//å¿½ç•¥
 		}
 	}
 
@@ -40,14 +39,14 @@ BOOL CCmdEdit::PreTranslateMessage(MSG* pMsg)
 		}
 	}
 
-	//»áÓĞÒ»¸öÌî³ä×îºóµÄ½á¹û×Ö·û´®
+	//ä¼šæœ‰ä¸€ä¸ªå¡«å……æœ€åçš„ç»“æœå­—ç¬¦ä¸²
 	if ((pMsg->message == WM_IME_COMPOSITION) &&
 		(pMsg->lParam & GCS_RESULTSTR)){
 		GetSel(start, end);
 		left = min(start, end);
 
 		if (left < m_ReadOnlyLength){
-			return TRUE;				//ºöÂÔ
+			return TRUE;				//å¿½ç•¥
 		}
 	}
 
@@ -111,18 +110,18 @@ BOOL CCmdEdit::PreTranslateMessage(MSG* pMsg)
 void CCmdEdit::OnEnter()
 {
 	CString Cmd;
-	//LARGE_INTEGER Frequency, Start, End;
-	//QueryPerformanceFrequency(&Frequency);
-	//QueryPerformanceCounter(&Start);
-
-	
 	int lastLine = GetLineCount() - 1;
-	int length = LineLength(LineIndex(lastLine));		//»ñÈ¡µ±Ç°×´Ì¬×îºóÒ»ĞĞµÄ³¤¶È.
+	int lineStart = LineIndex(lastLine);
+	int length = LineLength(lineStart);
 
 	TCHAR * lpBuf = new TCHAR[length + 1];
 	GetLine(lastLine, lpBuf);
 	lpBuf[length] = 0;
-	Cmd = lpBuf + m_LastLineTextLength;
+	// è®¡ç®—å‘½ä»¤åœ¨æœ€åä¸€è¡Œçš„åç§»é‡
+	int offset = m_ReadOnlyLength - lineStart;
+	if (offset < 0) offset = 0;
+	if (offset > length) offset = length;  // é˜²æ­¢è¶Šç•Œ
+	Cmd = lpBuf + offset;
 	delete[] lpBuf;
 
 	if (Cmd == TEXT("cls") || Cmd == TEXT("clear"))
@@ -155,7 +154,7 @@ void CCmdEdit::OnCmdResult(const CString &strResult)
 
 	CString strFinalResult;
 
-	SetSel(m_ReadOnlyLength, -1);			//°ÑÊäÈëµÄÄÇ²¿·ÖÒ²Ìæ»»µô.
+	SetSel(m_ReadOnlyLength, -1);			//æŠŠè¾“å…¥çš„é‚£éƒ¨åˆ†ä¹Ÿæ›¿æ¢æ‰.
 
 	while (*p)
 	{
@@ -173,17 +172,15 @@ void CCmdEdit::OnCmdResult(const CString &strResult)
 	ReplaceSel(strFinalResult);
 	m_ReadOnlyLength += strFinalResult.GetLength();
 
-	SetSel(m_ReadOnlyLength, m_ReadOnlyLength);			//¹â±êÒÆµ½×îºó.
+	SetSel(m_ReadOnlyLength, m_ReadOnlyLength);			//å…‰æ ‡ç§»åˆ°æœ€å.
 	PostMessage(WM_VSCROLL, SB_BOTTOM);
-	//
-	m_LastLineTextLength = LineLength(LineIndex(GetLineCount() -1 ));				//Get last line text length
 
 	return;
 }
 
 LRESULT CCmdEdit::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-	// TODO:  ÔÚ´ËÌí¼Ó×¨ÓÃ´úÂëºÍ/»òµ÷ÓÃ»ùÀà
+	// TODO:  åœ¨æ­¤æ·»åŠ ä¸“ç”¨ä»£ç å’Œ/æˆ–è°ƒç”¨åŸºç±»
 	int start, end, left;
 	if (message == EM_REPLACESEL)
 	{
@@ -229,7 +226,7 @@ int CCmdEdit::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	CDC *pDC = GetDC();
 
-	// TODO:  ÔÚ´ËÌí¼ÓÄú×¨ÓÃµÄ´´½¨´úÂë
+	// TODO:  åœ¨æ­¤æ·»åŠ æ‚¨ä¸“ç”¨çš„åˆ›å»ºä»£ç 
 	m_Font.CreateFont(
 		20,
 		10,

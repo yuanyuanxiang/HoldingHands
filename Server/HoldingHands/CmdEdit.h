@@ -13,8 +13,6 @@ private:
 
 	CList<CString>	m_Commands;
 	POSITION		m_LastCommand;
-
-	int			m_LastLineTextLength;
 public:
 	void OnEnter();
 	void OnCmdBegin();
